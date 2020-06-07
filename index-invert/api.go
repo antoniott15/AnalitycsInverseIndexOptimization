@@ -7,11 +7,12 @@ import (
 )
 
 func newDBAPI(prefix, port string) (*API, error) {
+	e := Engine{Query: map[string]string{}}
 	return &API{
 		e:      gin.Default(),
 		Port:   port,
 		prefix: prefix,
-		engine: &Engine{},
+		engine: &e,
 	}, nil
 }
 
@@ -32,7 +33,7 @@ func (api *API) registerEndpoints() {
 	r := api.e.Group(api.prefix)
 
 	api.registerHashtag(r)
-
+	api.registerIndexInvert(r)
 }
 
 func (api *API) Launch() error {
