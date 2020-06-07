@@ -8,7 +8,7 @@ import (
 )
 
 
-func (en *Engine) GetTweets(hashtag, limit string) (*proto.DataResponse, error){
+func (e *Engine) GetTweets(hashtag, limit string) (*proto.DataResponse, error){
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
