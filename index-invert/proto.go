@@ -16,7 +16,7 @@ func (e *Engine) GetTweets(hashtag, limit string) (*proto.DataResponse, error){
 	defer conn.Close()
 
 	c := proto.NewDataEngineClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	r, err := c.GiveData(ctx, &proto.DataRequest{

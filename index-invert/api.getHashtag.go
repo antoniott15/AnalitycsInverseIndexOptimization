@@ -27,9 +27,12 @@ func (api *API) registerHashtag(r *gin.RouterGroup){
 				return
 			}
 
-			tokens := api.engine.getTokens(tweets.Tweet)
-			err = api.engine.save(file(hashtag), tweets.Tweet)
+			tokens, err  := api.engine.getTokens(tweets.Tweet)
 			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			if err := api.engine.save(file(hashtag), tweets.Tweet); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}

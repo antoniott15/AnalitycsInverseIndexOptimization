@@ -5,4 +5,5 @@ const (
 	PREFIX  = "/api"
 	PORT    = ":4200"
 	ROOT    = "hashtags"
+	STOPWORDS = "stopwords"
 )
