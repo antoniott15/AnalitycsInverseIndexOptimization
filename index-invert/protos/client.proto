@@ -1,5 +1,7 @@
 syntax = "proto3";
-    
+
+package index;
+
 service DataEngine {
     rpc GiveData (DataRequest) returns (DataResponse) {}
 }
