@@ -1,1 +1,6 @@
-package index
+package main
+
+
+type Engine struct {
+}
+

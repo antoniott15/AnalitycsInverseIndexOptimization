@@ -1,26 +1,25 @@
-package index
+package main
 
 import (
 	"context"
 	"google.golang.org/grpc"
-	proto "index/protos"
+	proto "indexInverse/protos"
+	"time"
 )
 
-const (
-	address     = "localhost:50051"
-	defaultName = "world"
-)
 
-func GetTweets(hashtag, limit string) (*proto.DataResponse, error){
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func (en *Engine) GetTweets(hashtag, limit string) (*proto.DataResponse, error){
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 
 	c := proto.NewDataEngineClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 
-	r, err := c.GiveData(context.Background(), &proto.DataRequest{
+	r, err := c.GiveData(ctx, &proto.DataRequest{
 		Hashtag:              hashtag,
 		Limit:                limit,
 	})
