@@ -130,10 +130,7 @@ func (e *Engine) getIndexInvert(list []*proto.DataTweet) (map[string]*WordList, 
 			sep = " "
 		}
 		for _, words := range strings.Split(values.Tweet, sep) {
-			words := strings.ReplaceAll(words, " ", "")
-			words = strings.ReplaceAll(words, "\n", "")
-			words = strings.ReplaceAll(words, "!", "")
-			words = strings.ReplaceAll(words, "\"", "")
+			words = e.CleanWord(words)
 			if _, ok := stopWords[words]; !ok {
 				if words != "" {
 					if _, ok := tokens[words]; ok {
@@ -186,8 +183,6 @@ func (e *Engine) getTokenAndTweetsByFile(file string) (*proto.DataResponse, map[
 
 }
 
-
-
 func (e *Engine) getTweetsByFile(file string) (*proto.DataResponse, error) {
 	r, err := os.Open(file)
 	if err != nil {
@@ -209,7 +204,7 @@ func (e *Engine) getTweetsByFile(file string) (*proto.DataResponse, error) {
 
 }
 
-func (e *Engine) getIndexInvertByName(file string) ([]*WordList, error ){
+func (e *Engine) getIndexInvertByName(file string) ([]*WordList, error) {
 	r, err := os.Open(file)
 	if err != nil {
 		return nil, err
@@ -217,8 +212,22 @@ func (e *Engine) getIndexInvertByName(file string) ([]*WordList, error ){
 
 	decoder := json.NewDecoder(r)
 	var wordListIndex []*WordList
-	if err := decoder.Decode(&wordListIndex); err!= nil {
+	if err := decoder.Decode(&wordListIndex); err != nil {
 		return nil, err
 	}
 	return wordListIndex, nil
+}
+
+func (e *Engine) CleanWord(word string) string {
+	chars := []string{"!", "@", ".", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "?", "¿", "*", "}", "\n", " ", "\t", "¡", "^", "]", "[", ":", ";", "-", "_", ",", "\"", "'"}
+	var newWord string
+	for i, elements := range chars {
+		if i == 0 {
+
+			newWord = strings.ReplaceAll(word, elements, "")
+		} else {
+			newWord = strings.ReplaceAll(newWord, elements, "")
+		}
+	}
+	return newWord
 }
