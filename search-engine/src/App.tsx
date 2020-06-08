@@ -1,7 +1,7 @@
 import React, {useState, useMemo, useCallback, FunctionComponent} from 'react'
 import styled, {createGlobalStyle} from 'styled-components'
 import {Container, Row, Col, Form, Button} from 'react-bootstrap'
-import {Timeline} from 'react-twitter-widgets'
+import {Tweet} from 'react-twitter-widgets'
 import {FixedSizeList} from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import axios from 'axios'
@@ -75,11 +75,27 @@ class Token {
     }
 }
 
+class TweetElem {
+    id: string
+    name: string
+    tweet: string
+    username: string
+
+    constructor(id: string, name: string, tweet: string, username: string) {
+        this.id = id
+        this.name = name
+        this.tweet = tweet
+        this.username = username
+    }
+}
+
 const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
     const [invertedIndexInput, setInvertedIndexInput] = useState('')
     const tkList: Token[] = []
+    const tList: TweetElem[] = []
     const [tokens, setTokens] = useState(tkList)
+    const [tweets, setTweets] = useState(tList)
 
     const compare = (a: Token, b: Token) => {
         if (a.freq > b.freq) {
@@ -100,14 +116,21 @@ const App = () => {
         const url = base_url + 'api/get-hashtag/' + hashTagInput + '/100'
         await axios.get(url)
             .then((res) => {
-                console.log('saving data')
+                console.log(res.data)
                 const tokensList: Token[] = []
+                const tweetsList: TweetElem[] = []
                 Object.keys(res.data.data.tokens).forEach(key => {
                     tokensList.push(new Token(key, res.data.data.tokens[key]))
                 })
                 tokensList.sort(compare)
-                console.log(tokensList)
                 setTokens(tokensList)
+
+                res.data.data.tweets.tweet.forEach((t: any) => {
+                    tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
+                })
+                console.log(tweetsList)
+                setTweets(tweetsList)
+                console.log(tweets)
             })
             .catch(e => console.log(e))
     }
@@ -123,10 +146,7 @@ const App = () => {
                 </Row>
                 <Row>
                     <Col>
-                        <Timeline
-                            dataSource={{sourceType: 'profile', screenName: 'realDonaldTrump'}}
-                            options={{theme: 'dark', height: '700'}}
-                        />
+                        tweets
                     </Col>
                     <Col>
                         <Wrapper>
