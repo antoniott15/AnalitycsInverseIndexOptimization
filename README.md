@@ -5,6 +5,13 @@
 El presente proyecto trata de scrappear la pagina de twitter dado un hashtag, seguido a eso tokeniza las palabras mas importantes y las muestra en una interfaz amigable.
 
 
+# Procedimiento
+
+El proyecto se base en 3 servicios fundamentales, servicio en python, este usa un tercero llamado twint el cual nos facilita la extraccion de data de twitter dado un limite y un hashtag provee todos los últimos tweets.
+El segun servicio escrito en go te permite procesar la data y recepcionar los request del cliente, este se encarga de ejecutar via RPC los requerimientos del client, al ser llamados se encarga de limpiar los datos y almacenarlos en memoria secundaria, si encuentra datos ya existentes el query se ejecuta más rapido, ya que están almacenados en memoria secundiar y se obvia el proceso de generar un request al servicio en python.
+
+El último y no menos importante es el servicio de cara al cliente o tambien llamado frontend, en este se enceuntra el query engine/search engine en el cual gracias a un agradable UI es posible manejar los datos que te requieren.
+
 # Dependencias
     - Go
     - Python
@@ -42,7 +49,7 @@ El proyecto tiene un pequeño approach de micro servicios teniendo en cuenta las
  ![Architectura](public/arch.png)
 
 
-# Client
+# Cliente
 
 El cliente esta compuesto por una interfaz en la que puedes preguntar por hashtags y hacer un filtrado por palabras relevantes.
 

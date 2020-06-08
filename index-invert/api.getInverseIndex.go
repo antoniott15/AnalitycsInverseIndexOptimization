@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
 	proto "indexInverse/protos"
 	"net/http"
 	"strings"
-)
 
+	"github.com/gin-gonic/gin"
+)
 
 func (api *API) registerIndexInvert(r *gin.RouterGroup) {
 	r.GET("/get-index-invert/:hashtag", func(c *gin.Context) {
@@ -54,7 +53,6 @@ func (api *API) registerIndexInvert(r *gin.RouterGroup) {
 		for _, elements := range index {
 			if val, ok := indexToCheck[elements.Name]; ok {
 				for _, values := range elements.IdsAppearing {
-					fmt.Println(values)
 					if val {
 						idsAppearing[values] = true
 					} else {
@@ -64,12 +62,9 @@ func (api *API) registerIndexInvert(r *gin.RouterGroup) {
 			}
 		}
 
-
-
 		result := &proto.DataResponse{}
 		for _, elements := range data.Tweet {
-			fmt.Println(elements.Id)
-			if val,ok := idsAppearing[elements.Id]; ok {
+			if val, ok := idsAppearing[elements.Id]; ok {
 				if val {
 					result.Tweet = append(result.Tweet, elements)
 				}
