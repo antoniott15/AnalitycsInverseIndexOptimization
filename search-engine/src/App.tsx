@@ -138,7 +138,7 @@ const App = () => {
                     <Col>
                         <Timeline
                             dataSource={{sourceType: 'profile', screenName: 'realDonaldTrump'}}
-                            options={{theme: '', height: '700'}}
+                            options={{theme: 'dark', height: '700'}}
                         />
                     </Col>
                     <Col>
