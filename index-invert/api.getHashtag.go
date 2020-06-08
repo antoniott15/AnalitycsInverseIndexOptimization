@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (api *API) registerHashtag(r *gin.RouterGroup) {
@@ -12,13 +13,13 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 
 		var has = false
 
-		if val,ok := api.engine.Query[file(hashtag)]; ok {
-			if val == limit{
+		if val, ok := api.engine.Query[file(hashtag)]; ok {
+			if val == limit {
 				has = true
-			}else {
-				has =false
+			} else {
+				has = false
 			}
-		}else {
+		} else {
 			api.engine.Query[file(hashtag)] = limit
 			has = false
 		}
@@ -38,6 +39,8 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 			if err := api.engine.saveIndexInvert(fileIndexInvert(hashtag), words); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			}
+
+			tokens = api.engine.cleanTokens(tokens)
 
 			if err := api.engine.save(file(hashtag), tweets.Tweet); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -59,8 +62,6 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 			return
 		}
 
-
-
 		c.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
 				"tweets": tweets,
@@ -71,11 +72,18 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 	})
 }
 
-
 func file(value string) string {
 	return ROOT + "/" + value
 }
 
 func fileIndexInvert(value string) string {
 	return INVERT + "/" + value
+}
+
+func (e *Engine) cleanTokens(tokens map[string]int) map[string]int {
+	newTokens := make(map[string]int)
+	for key, val := range tokens {
+		newTokens[e.CleanWord(key)] = val
+	}
+	return newTokens
 }

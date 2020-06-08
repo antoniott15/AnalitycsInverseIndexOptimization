@@ -92,9 +92,7 @@ func (e *Engine) getTokens(list []*proto.DataTweet) (map[string]int, error) {
 	}
 	for _, values := range list {
 		for _, words := range strings.Split(values.Tweet, " ") {
-			words := strings.ReplaceAll(words, "\n", "")
-			words = strings.ReplaceAll(words, "!", "")
-			words = strings.ReplaceAll(words, "\"", "")
+			words = e.CleanWord(words)
 			if _, ok := stopWords[words]; !ok {
 				if words != "" {
 					if _, ok := tokens[words]; ok {
