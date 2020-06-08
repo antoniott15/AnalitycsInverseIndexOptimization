@@ -4,8 +4,7 @@ import {Container, Row, Col, Form, Button} from 'react-bootstrap'
 import {Timeline} from 'react-twitter-widgets'
 import {FixedSizeList} from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
-
-import ResponseData from './data/response.json'
+import axios from 'axios'
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -79,6 +78,8 @@ class Token {
 const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
     const [invertedIndexInput, setInvertedIndexInput] = useState('')
+    const tkList: Token[] = []
+    const [tokens, setTokens] = useState(tkList)
 
     const compare = (a: Token, b: Token) => {
         if (a.freq > b.freq) {
@@ -90,40 +91,26 @@ const App = () => {
         return 0;
     }
 
-    const fetch = () => {
-        setTimeout(() => {
-            data.slice(0, 20)
-        }, 1500)
-    }
-
     const onSubmit = () => {
         //
     }
 
-    // @ts-ignore
-    const CustomRow = ({index, style}) => (
-        <Row>
-            <Col>
-                {data[index].word}
-            </Col>
-            <Col>
-                {data[index].freq}
-            </Col>
-        </Row>
-    )
-
-    const data = useMemo(() => {
-        const tokensList: Token[] = []
-        Object.keys(ResponseData.data.tokens).forEach(key => {
-            // @ts-ignore
-            tokensList.push(new Token(key, ResponseData.data.tokens[key]))
-        })
-        tokensList.sort(compare)
-        return tokensList
-    }, [])
-
-    const getItemSize = (index: number) => data[index];
-
+    const searchHashTag = async () => {
+        const base_url = 'http://localhost:4200/'
+        const url = base_url + 'api/get-hashtag/' + hashTagInput + '/100'
+        await axios.get(url)
+            .then((res) => {
+                console.log('saving data')
+                const tokensList: Token[] = []
+                Object.keys(res.data.data.tokens).forEach(key => {
+                    tokensList.push(new Token(key, res.data.data.tokens[key]))
+                })
+                tokensList.sort(compare)
+                console.log(tokensList)
+                setTokens(tokensList)
+            })
+            .catch(e => console.log(e))
+    }
     // @ts-ignore
     return (
         <React.Fragment>
@@ -147,7 +134,7 @@ const App = () => {
                                 <Form.Label>Búsqueda por Hashtag</Form.Label>
                                 <CustomInput onChange={((e: any) => setHashTagInput(e.target.value))} type="text"/>
                             </Form.Group>
-                            <CustomButton type="submit" onClick={onSubmit}>
+                            <CustomButton type="submit" onClick={searchHashTag}>
                                 Buscar
                             </CustomButton>
                         </Wrapper>
@@ -170,7 +157,7 @@ const App = () => {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {data.map((data) => {
+                                {tokens.map((data) => {
                                     return (
                                         <tr>
                                             <td>{data.word}</td>
