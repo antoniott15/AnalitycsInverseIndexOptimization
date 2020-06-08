@@ -2,40 +2,10 @@ import React, {useState, useMemo, useCallback, FunctionComponent} from 'react'
 import styled, {createGlobalStyle} from 'styled-components'
 import {Container, Row, Col, Form, Button} from 'react-bootstrap'
 import {Timeline} from 'react-twitter-widgets'
-import {useTable, useBlockLayout} from 'react-table'
 import {FixedSizeList} from 'react-window'
+import AutoSizer from 'react-virtualized-auto-sizer'
 
 import ResponseData from './data/response.json'
-
-const Styles = styled.div`
-  padding: 1rem;
-
-  .table {
-    border-spacing: 0;
-    border: 1px solid white;
-    color: white !important;
-
-    tr {
-      :last-child {
-        td {
-          border-bottom: 0;
-        }
-      }
-    }
-
-    .th,
-    .td {
-      margin: 0;
-      padding: 0.5rem;
-      border-bottom: 1px solid white !important;
-      border-right: 1px solid white !important;
-
-      :last-child {
-        border-right: 0;
-      }
-    }
-  }
-`
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -79,86 +49,22 @@ const CustomInput = styled(Form.Control)`
   }
 `
 
-type TableProps = {
-    columns: any,
-    data: any
-}
-
-const Table: FunctionComponent<TableProps> = ({columns, data}) => {
-
-    const defaultColumn = useMemo(() => ({
-            width: 150
-        }),
-        []
-    )
-
-    const {
-        getTableProps,
-        getTableBodyProps,
-        headerGroups,
-        rows,
-        totalColumnsWidth,
-        prepareRow
-    } = useTable(
-        {
-            columns,
-            data,
-            defaultColumn
-        },
-        useBlockLayout
-    )
-
-    const RenderRow = useCallback(
-        ({index, style}) => {
-            const row = rows[index]
-            prepareRow(row)
-            return (
-                <div
-                    {...row.getRowProps({
-                        style
-                    })}
-                    className="tr"
-                >
-                    {row.cells.map(cell => {
-                        return (
-                            <div {...cell.getCellProps()} className="td">
-                                {cell.render('Cell')}
-                            </div>
-                        )
-                    })}
-                </div>
-            )
-        },
-        [prepareRow, rows]
-    )
-
-    return (
-        <div {...getTableProps()} className="table">
-            <div>
-                {headerGroups.map(headerGroup => (
-                    <div {...headerGroup.getHeaderGroupProps()} className="tr">
-                        {headerGroup.headers.map(column => (
-                            <div {...column.getHeaderProps()} className="th">
-                                {column.render('Header')}
-                            </div>
-                        ))}
-                    </div>
-                ))}
-            </div>
-
-            <div {...getTableBodyProps()}>
-                <FixedSizeList
-                    height={400}
-                    itemCount={rows.length}
-                    itemSize={35}
-                    width={totalColumnsWidth}
-                >
-                    {RenderRow}
-                </FixedSizeList>
-            </div>
-        </div>
-    )
-}
+const TableWrapper = styled.div`
+  max-height: 300px;
+  overflow-y: scroll;
+    td {
+        max-width: 400px;
+        overflow: auto;
+        border: 1px solid white;
+        padding: 10px;
+      }
+      
+      th {
+      border: 1px solid white;
+      width: 100%;
+      padding: 10px;
+      }
+`
 
 class Token {
     word: string
@@ -174,31 +80,36 @@ const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
     const [invertedIndexInput, setInvertedIndexInput] = useState('')
 
-    const compare = ( a: Token, b: Token ) => {
-        if ( a.freq > b.freq ){
+    const compare = (a: Token, b: Token) => {
+        if (a.freq > b.freq) {
             return -1;
         }
-        if ( a.freq < b.freq ){
+        if (a.freq < b.freq) {
             return 1;
         }
         return 0;
+    }
+
+    const fetch = () => {
+        setTimeout(() => {
+            data.slice(0, 20)
+        }, 1500)
     }
 
     const onSubmit = () => {
         //
     }
 
-    const columns = useMemo(() => [
-            {
-                Header: 'word',
-                accessor: 'word'
-            },
-            {
-                Header: 'freq',
-                accessor: 'freq'
-            }
-        ],
-        []
+    // @ts-ignore
+    const CustomRow = ({index, style}) => (
+        <Row>
+            <Col>
+                {data[index].word}
+            </Col>
+            <Col>
+                {data[index].freq}
+            </Col>
+        </Row>
     )
 
     const data = useMemo(() => {
@@ -211,6 +122,9 @@ const App = () => {
         return tokensList
     }, [])
 
+    const getItemSize = (index: number) => data[index];
+
+    // @ts-ignore
     return (
         <React.Fragment>
             <GlobalStyle/>
@@ -247,16 +161,32 @@ const App = () => {
                                 Buscar
                             </CustomButton>
                         </Wrapper>
-                        <Wrapper>
-                            <Styles>
-                                <Table columns={columns} data={data}/>
-                            </Styles>
-                        </Wrapper>
+                        <TableWrapper>
+                            <table>
+                                <thead>
+                                <tr>
+                                    <th>Word</th>
+                                    <th>Frequency</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {data.map((data) => {
+                                    return (
+                                        <tr>
+                                            <td>{data.word}</td>
+                                            <td>{data.freq}</td>
+                                        </tr>
+                                    )
+                                })}
+                                </tbody>
+                            </table>
+                        </TableWrapper>
                     </Col>
                 </Row>
             </Container>
         </React.Fragment>
     );
+
 }
 
 export default App;
