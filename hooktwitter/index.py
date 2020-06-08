@@ -12,7 +12,6 @@ def hook_data(hashtag: str, limit: int = 100) -> [twint.tweet.tweet]:
     c.Search = hashtag
     c.Limit = limit if limit > 0 else None
     c.Store_object = True
-    c.Output = "dat.json"
     twint.run.Search(c)
     tweets = twint.run.output.tweets_list
     twint.run.output.tweets_list = []

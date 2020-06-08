@@ -1,9 +1,9 @@
 syntax = "proto3";
-    
+
 service DataEngine {
     rpc GiveData (DataRequest) returns (DataResponse) {}
 }
-  
+
 message DataRequest {
     string hashtag = 1;
     string limit = 2;
@@ -13,7 +13,7 @@ message DataResponse {
     repeated DataTweet tweet = 1;
     int32 lenght = 2;
 }
-  
+
 message DataTweet {
     string id = 1;
     string username = 2;
