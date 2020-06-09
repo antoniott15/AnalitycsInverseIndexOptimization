@@ -65,6 +65,12 @@ const TableWrapper = styled.div`
       }
 `
 
+const TweetsWrapper = styled.div`
+  position: absolute;
+  height: 100%;
+  overflow-y: scroll;
+`
+
 class Token {
     word: string
     freq: number
@@ -145,8 +151,12 @@ const App = () => {
                     </Title>
                 </Row>
                 <Row>
-                    <Col>
-                        tweets
+                    <Col style={{overflow: "hidden", position: "relative"}}>
+                        <TweetsWrapper>
+                            {tweets.map(elem => (
+                                <Tweet options={{ theme: 'dark'}} tweetId={elem.id}/>
+                            ))}
+                        </TweetsWrapper>
                     </Col>
                     <Col>
                         <Wrapper>
