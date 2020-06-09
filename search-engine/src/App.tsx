@@ -139,10 +139,10 @@ const App = () => {
     }
 
     const searchInvertedIndex = async () => {
-        const url = base_url + 'api/get-index-invert/' + invertedIndexInput
+        const url = base_url + 'api/get-index-invert/' + hashTagInput
         await axios.get(url)
             .then((res: AxiosResponse<any>) => {
-
+                console.log(res.data)
             })
     }
     // @ts-ignore
@@ -179,7 +179,7 @@ const App = () => {
                                 <Form.Label>Búsqueda por Índice Invertido</Form.Label>
                                 <CustomInput onChange={(e: any) => setInvertedIndexInput(e.target.value)} type="text"/>
                             </Form.Group>
-                            <CustomButton type="submit" onClick={onSubmit}>
+                            <CustomButton type="submit" onClick={searchInvertedIndex}>
                                 Buscar
                             </CustomButton>
                         </Wrapper>
