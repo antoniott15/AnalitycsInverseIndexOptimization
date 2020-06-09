@@ -9,7 +9,7 @@ import (
 )
 
 func (api *API) registerIndexInvert(r *gin.RouterGroup) {
-	r.GET("/get-index-invert/:hashtag", func(c *gin.Context) {
+	r.POST("/get-index-invert/:hashtag", func(c *gin.Context) {
 		hashtag := c.Param("hashtag")
 		var values map[string][]string
 		if err := c.BindJSON(&values); err != nil {
