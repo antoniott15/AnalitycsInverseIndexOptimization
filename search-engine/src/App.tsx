@@ -4,7 +4,7 @@ import {Container, Row, Col, Form, Button} from 'react-bootstrap'
 import {Tweet} from 'react-twitter-widgets'
 import {FixedSizeList} from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
-import axios from 'axios'
+import axios, {AxiosResponse} from 'axios'
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -116,13 +116,12 @@ const App = () => {
     const onSubmit = () => {
         //
     }
+    const base_url = 'http://localhost:4200/'
 
     const searchHashTag = async () => {
-        const base_url = 'http://localhost:4200/'
         const url = base_url + 'api/get-hashtag/' + hashTagInput + '/100'
         await axios.get(url)
             .then((res) => {
-                console.log(res.data)
                 const tokensList: Token[] = []
                 const tweetsList: TweetElem[] = []
                 Object.keys(res.data.data.tokens).forEach(key => {
@@ -134,11 +133,17 @@ const App = () => {
                 res.data.data.tweets.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
                 })
-                console.log(tweetsList)
                 setTweets(tweetsList)
-                console.log(tweets)
             })
             .catch(e => console.log(e))
+    }
+
+    const searchInvertedIndex = async () => {
+        const url = base_url + 'api/get-index-invert/' + invertedIndexInput
+        await axios.get(url)
+            .then((res: AxiosResponse<any>) => {
+
+            })
     }
     // @ts-ignore
     return (
