@@ -12,6 +12,7 @@ func (api *API) registerIndexInvert(r *gin.RouterGroup) {
 	r.POST("/get-index-invert/:hashtag", func(c *gin.Context) {
 		hashtag := c.Param("hashtag")
 		hashtag = "#" + hashtag
+
 		var values map[string][]string
 		if err := c.BindJSON(&values); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

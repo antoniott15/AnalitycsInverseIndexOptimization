@@ -9,11 +9,12 @@ import (
 func (api *API) registerHashtag(r *gin.RouterGroup) {
 	r.GET("/get-hashtag/:hashtag/:limit", func(c *gin.Context) {
 		hashtag := c.Param("hashtag")
+		hashtag = "#" + hashtag
+
 		limit := c.Param("limit")
 
 		var has = false
 
-		hashtag = "#" + hashtag
 		if val, ok := api.engine.Query[file(hashtag)]; ok {
 			if val == limit {
 				has = true
