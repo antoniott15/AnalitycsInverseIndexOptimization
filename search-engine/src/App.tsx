@@ -1,8 +1,8 @@
-import React, {useState, useMemo, useCallback, FunctionComponent} from 'react'
-import styled, {createGlobalStyle} from 'styled-components'
-import {Container, Row, Col, Form, Button} from 'react-bootstrap'
-import {Tweet} from 'react-twitter-widgets'
-import {FixedSizeList} from 'react-window'
+import React, { useState, useMemo, useCallback, FunctionComponent } from 'react'
+import styled, { createGlobalStyle } from 'styled-components'
+import { Container, Row, Col, Form, Button } from 'react-bootstrap'
+import { Tweet } from 'react-twitter-widgets'
+import { FixedSizeList } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import axios, { AxiosResponse } from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -24,6 +24,11 @@ const Title = styled.div`
   margin-bottom: 50px;
 `
 
+const TableInfoWrapper = styled.div`
+    display: flex;
+    justify-content: center;
+    top: 10rem;
+`
 const CustomButton = styled(Button)`
   background-color: rgb(29, 161, 242);
   border-radius: 9999px;
@@ -94,6 +99,19 @@ class TweetElem {
     }
 }
 
+type Node = {
+    id: string,
+}
+type Link = {
+    source: string,
+    target: string,
+}
+
+interface Data  {
+    nodes: Set<Node>
+    links: Array<Link>
+}
+
 const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
     const [numberOfRequests, setnumberOfRequests] = useState()
@@ -103,6 +121,7 @@ const App = () => {
     const [tokens, setTokens] = useState(tkList)
     const [tweets, setTweets] = useState(tList)
     const [loadingHashTag, setLoadingHashTag] = useState(false)
+    const [tableInfo, setTableInfo] = useState(false)
     const [loadingInvIndex, setLoadingInvIndex] = useState(false)
 
 
@@ -123,10 +142,11 @@ const App = () => {
 
     const searchHashTag = async () => {
         setLoadingHashTag(true)
+        setTableInfo(false)
         const url = base_url + 'api/get-hashtag/' + hashTagInput + '/' + numberOfRequests
         await axios.get(url)
             .then((res) => {
-                console.log(res.data)
+                setTableInfo(true)
                 const tokensList: Token[] = []
                 const tweetsList: TweetElem[] = []
                 Object.keys(res.data.data.tokens).forEach(key => {
@@ -134,20 +154,33 @@ const App = () => {
                 })
                 tokensList.sort(compare)
                 setTokens(tokensList)
-
+                const graph: Data = {
+                    nodes: new Set<Node>(),
+                    links: []
+                };
                 res.data.data.tweets.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
+                    
+                    for(const elements in t.hashtags){
+                        graph.nodes.add(t.hashtags[elements])
+                    }
+                    for(let i = 0; i < t.hashtags.lenght; i++){
+                        for(let j = i + 1; j < t.hashtags.lenght - 1; j++){
+                            
+                        }
+                    }
                 })
                 setTweets(tweetsList)
+                setLoadingHashTag(false)
             })
             .catch(e => console.log(e))
-        setLoadingHashTag(false)
+
     }
 
     const searchInvertedIndex = async () => {
         setLoadingInvIndex(true)
         const url = base_url + 'api/get-index-invert/' + hashTagInput
-        var words = invertedIndexInput.replace(/\s+/g,' ')
+        var words = invertedIndexInput.replace(/\s+/g, ' ')
         var wordList: string[] = words.split(' ')
         await axios.post(url, {
             data: wordList
@@ -166,7 +199,7 @@ const App = () => {
     // @ts-ignore
     return (
         <React.Fragment>
-            <GlobalStyle/>
+            <GlobalStyle />
             <Container>
                 <Row className="justify-content-md-center">
                     <Title>
@@ -174,54 +207,69 @@ const App = () => {
                     </Title>
                 </Row>
                 <Row>
-                    <Col style={{overflow: "hidden", position: "relative"}}>
-                        <TweetsWrapper>
-                            {tweets.map(elem => (
-                                <Tweet options={{ theme: 'dark'}} tweetId={elem.id}/>
-                            ))}
-                        </TweetsWrapper>
+                    <Col style={{ overflow: "hidden", position: "relative" }}>
+                        {
+                            tableInfo ? (
+                                <TweetsWrapper>
+                                    {tweets.map(elem => (
+                                        <Tweet options={{ theme: 'dark' }} tweetId={elem.id} />
+                                    ))}
+                                </TweetsWrapper>
+                            ) : (
+                                    loadingHashTag ? (
+                                        <TableInfoWrapper style={{ marginTop: "10rem" }}>
+                                            <Form.Label>... Loading</Form.Label>
+                                        </TableInfoWrapper>
+
+                                    ) : (
+                                            <TableInfoWrapper style={{ marginTop: "10rem" }}>
+                                                <Form.Label>No data</Form.Label>
+                                            </TableInfoWrapper>
+                                        )
+                                )
+                        }
                     </Col>
                     <Col>
                         <Wrapper>
                             <Form.Group>
                                 <Form.Label>Búsqueda por Hashtag</Form.Label>
-                                <CustomInput onChange={((e: any) => setHashTagInput(e.target.value))} type="text"/>
+                                <CustomInput onChange={((e: any) => setHashTagInput(e.target.value))} type="text" />
                                 <Form.Label>Cantidad</Form.Label>
                                 <CustomInput onChange={((e: any) => setnumberOfRequests(e.target.value))} type="text" />
                             </Form.Group>
                             <CustomButton type="submit" onClick={searchHashTag}>
-                                { !loadingHashTag && <span>Buscar</span>}
-                                { loadingHashTag && <CircularProgress color="secondary" /> }
+                                {!loadingHashTag && <span>Buscar</span>}
+                                {loadingHashTag && <CircularProgress color="secondary" />}
                             </CustomButton>
                         </Wrapper>
 
                         <Wrapper>
                             <Form.Group>
                                 <Form.Label>Búsqueda por Índice Invertido</Form.Label>
-                                <CustomInput onChange={(e: any) => setInvertedIndexInput(e.target.value)} type="text"/>
+                                <CustomInput onChange={(e: any) => setInvertedIndexInput(e.target.value)} type="text" />
                             </Form.Group>
                             <CustomButton type="submit" onClick={searchInvertedIndex}>
-                                { !loadingInvIndex && <span>Buscar</span>}
-                                { loadingInvIndex && <CircularProgress color="secondary" /> }
+                                {!loadingInvIndex && <span>Buscar</span>}
+                                {loadingInvIndex && <CircularProgress color="secondary" />}
                             </CustomButton>
                         </Wrapper>
                         <TableWrapper>
                             <table>
                                 <thead>
-                                <tr>
-                                    <th>Word</th>
-                                    <th>Frequency</th>
-                                </tr>
+                                    <tr>
+                                        <th>Word</th>
+                                        <th>Frequency</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                {tokens.map((data) => {
-                                    return (
-                                        <tr>
-                                            <td>{data.word}</td>
-                                            <td>{data.freq}</td>
-                                        </tr>
-                                    )
-                                })}
+                                    {tokens.map((data) => {
+                                        return (
+                                            <tr>
+                                                <td>{data.word}</td>
+                                                <td>{data.freq}</td>
+                                            </tr>
+                                        )
+                                    })}
                                 </tbody>
                             </table>
                         </TableWrapper>
