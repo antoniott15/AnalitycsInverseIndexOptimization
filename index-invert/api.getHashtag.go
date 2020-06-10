@@ -13,6 +13,7 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 
 		var has = false
 
+		hashtag = "#" + hashtag
 		if val, ok := api.engine.Query[file(hashtag)]; ok {
 			if val == limit {
 				has = true
