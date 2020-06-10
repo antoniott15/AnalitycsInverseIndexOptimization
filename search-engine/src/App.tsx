@@ -4,7 +4,8 @@ import {Container, Row, Col, Form, Button} from 'react-bootstrap'
 import {Tweet} from 'react-twitter-widgets'
 import {FixedSizeList} from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
-import axios, {AxiosResponse} from 'axios'
+import axios, { AxiosResponse } from 'axios'
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -28,8 +29,6 @@ const CustomButton = styled(Button)`
   border-radius: 9999px;
   padding-left: 30px;
   padding-right: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
   box-shadow: rgba(0, 0, 0, 0.08) 0 8px 28px;
   border-color: rgb(0, 0, 0, 0);
   min-width: 200px;
@@ -97,11 +96,15 @@ class TweetElem {
 
 const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
+    const [numberOfRequests, setnumberOfRequests] = useState()
     const [invertedIndexInput, setInvertedIndexInput] = useState('')
     const tkList: Token[] = []
     const tList: TweetElem[] = []
     const [tokens, setTokens] = useState(tkList)
     const [tweets, setTweets] = useState(tList)
+    const [loadingHashTag, setLoadingHashTag] = useState(false)
+    const [loadingInvIndex, setLoadingInvIndex] = useState(false)
+
 
     const compare = (a: Token, b: Token) => {
         if (a.freq > b.freq) {
@@ -119,9 +122,11 @@ const App = () => {
     const base_url = 'http://localhost:4200/'
 
     const searchHashTag = async () => {
-        const url = base_url + 'api/get-hashtag/' + hashTagInput + '/100'
+        setLoadingHashTag(true)
+        const url = base_url + 'api/get-hashtag/' + hashTagInput + '/' + numberOfRequests
         await axios.get(url)
             .then((res) => {
+                console.log(res.data)
                 const tokensList: Token[] = []
                 const tweetsList: TweetElem[] = []
                 Object.keys(res.data.data.tokens).forEach(key => {
@@ -136,14 +141,27 @@ const App = () => {
                 setTweets(tweetsList)
             })
             .catch(e => console.log(e))
+        setLoadingHashTag(false)
     }
 
     const searchInvertedIndex = async () => {
+        setLoadingInvIndex(true)
         const url = base_url + 'api/get-index-invert/' + hashTagInput
-        await axios.get(url)
+        var words = invertedIndexInput.replace(/\s+/g,' ')
+        var wordList: string[] = words.split(' ')
+        await axios.post(url, {
+            data: wordList
+        })
             .then((res: AxiosResponse<any>) => {
                 console.log(res.data)
+                const tweetsList: TweetElem[] = []
+                res.data.data.tweet.forEach((t: any) => {
+                    tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
+                })
+                setTweets(tweetsList)
             })
+            .catch(e => console.log(e))
+        setLoadingInvIndex(false)
     }
     // @ts-ignore
     return (
@@ -168,9 +186,12 @@ const App = () => {
                             <Form.Group>
                                 <Form.Label>Búsqueda por Hashtag</Form.Label>
                                 <CustomInput onChange={((e: any) => setHashTagInput(e.target.value))} type="text"/>
+                                <Form.Label>Cantidad</Form.Label>
+                                <CustomInput onChange={((e: any) => setnumberOfRequests(e.target.value))} type="text" />
                             </Form.Group>
                             <CustomButton type="submit" onClick={searchHashTag}>
-                                Buscar
+                                { !loadingHashTag && <span>Buscar</span>}
+                                { loadingHashTag && <CircularProgress color="secondary" /> }
                             </CustomButton>
                         </Wrapper>
 
@@ -180,7 +201,8 @@ const App = () => {
                                 <CustomInput onChange={(e: any) => setInvertedIndexInput(e.target.value)} type="text"/>
                             </Form.Group>
                             <CustomButton type="submit" onClick={searchInvertedIndex}>
-                                Buscar
+                                { !loadingInvIndex && <span>Buscar</span>}
+                                { loadingInvIndex && <CircularProgress color="secondary" /> }
                             </CustomButton>
                         </Wrapper>
                         <TableWrapper>
