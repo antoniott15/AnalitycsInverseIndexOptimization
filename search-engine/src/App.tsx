@@ -6,6 +6,7 @@ import { Graph, GraphNode, GraphLink } from "react-d3-graph";
 import { myConfig } from "./config"
 import axios, { AxiosResponse } from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { AutoSizer, Column, Table } from 'react-virtualized';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -103,7 +104,9 @@ const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
     const [numberOfRequests, setnumberOfRequests] = useState()
     const [invertedIndexInput, setInvertedIndexInput] = useState('')
-    const tkList: Token[] = []
+    const tkList: Token[] = [
+        new Token('hello', 5)
+    ]
     const tList: TweetElem[] = []
     const [tokens, setTokens] = useState(tkList)
     const [tweets, setTweets] = useState(tList)
@@ -266,26 +269,21 @@ const App = () => {
                                 {loadingInvIndex && <CircularProgress color="secondary" />}
                             </CustomButton>
                         </Wrapper>
-                        <TableWrapper>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Word</th>
-                                        <th>Frequency</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tokens.map((data) => {
-                                        return (
-                                            <tr>
-                                                <td>{data.word}</td>
-                                                <td>{data.freq}</td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </TableWrapper>
+                        <AutoSizer disableHeight disableWidth>
+                            {({width}) => (
+                                <Table
+                                    width={300}
+                                    height={300}
+                                    headerHeight={100}
+                                    rowHeight={100}
+                                    rowCount={tokens.length}
+                                    rowGetter={({ index }) => tokens[index]}
+                                >
+                                    <Column label="word" dataKey="word" width={150} />
+                                    <Column label="freq" dataKey="freq" width={150} />
+                                </Table>
+                            )}
+                        </AutoSizer>
                     </Col>
                 </Row>
             </Container>
