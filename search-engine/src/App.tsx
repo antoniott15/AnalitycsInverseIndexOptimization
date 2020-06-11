@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback, FunctionComponent } from 'react'
+import React, { useState } from 'react'
 import styled, { createGlobalStyle } from 'styled-components'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
 import { Tweet } from 'react-twitter-widgets'
-import { FixedSizeList } from 'react-window'
-import AutoSizer from 'react-virtualized-auto-sizer'
+import { Graph, GraphNode, GraphLink } from "react-d3-graph";
+import { myConfig } from "./config"
 import axios, { AxiosResponse } from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress';
 
@@ -99,19 +99,6 @@ class TweetElem {
     }
 }
 
-type Node = {
-    id: string,
-}
-type Link = {
-    source: string,
-    target: string,
-}
-
-interface Data  {
-    nodes: Set<Node>
-    links: Array<Link>
-}
-
 const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
     const [numberOfRequests, setnumberOfRequests] = useState()
@@ -123,7 +110,12 @@ const App = () => {
     const [loadingHashTag, setLoadingHashTag] = useState(false)
     const [tableInfo, setTableInfo] = useState(false)
     const [loadingInvIndex, setLoadingInvIndex] = useState(false)
+    const Defaultdata = {
+        nodes: [{ id: "No" }, { id: "Data" }],
+        links: [{ source: "No", target: "Data" }],
+    };
 
+    const [data, setData] = useState(Defaultdata)
 
     const compare = (a: Token, b: Token) => {
         if (a.freq > b.freq) {
@@ -135,10 +127,18 @@ const App = () => {
         return 0;
     }
 
-    const onSubmit = () => {
-        //
-    }
     const base_url = 'http://localhost:4200/'
+
+    const filterDuplicates = (w: any) => w.filter((v: any,i: any) => w.indexOf(v) === i)
+
+    const decorateGraphNodesWithInitialPositioning = (nodes: any) => {
+        return nodes.map((n: any) =>
+            Object.assign({}, n, {
+                x: n.x || Math.floor(Math.random() * 500),
+                y: n.y || Math.floor(Math.random() * 500),
+            })
+        );
+    };
 
     const searchHashTag = async () => {
         setLoadingHashTag(true)
@@ -154,22 +154,33 @@ const App = () => {
                 })
                 tokensList.sort(compare)
                 setTokens(tokensList)
-                const graph: Data = {
-                    nodes: new Set<Node>(),
-                    links: []
-                };
+                const nodes: Array<GraphNode> = new Array<GraphNode>();
+                const links: Array<GraphLink> = new Array<GraphLink>();
+
+
                 res.data.data.tweets.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
-                    
-                    for(const elements in t.hashtags){
-                        graph.nodes.add(t.hashtags[elements])
+
+                    for (const elements in t.hashtags) {
+                        nodes.push({ id: t.hashtags[elements] })
                     }
-                    for(let i = 0; i < t.hashtags.lenght; i++){
-                        for(let j = i + 1; j < t.hashtags.lenght - 1; j++){
-                            
+
+                    if (t.hashtags.length >= 2) {
+                        for (let i = 0; i < t.hashtags.length; i++) {
+                            for (let j = i + 1; j < t.hashtags.length; j++) {
+                                if(t.hashtags[i] !==  t.hashtags[j]){
+                                    links.push({ source: t.hashtags[i], target: t.hashtags[j] })
+                                }
+                            }
                         }
                     }
+
                 })
+
+                //@ts-ignore
+                const newLinks = links.filter((set => f => !set.has(f.source) && set.add(f.target))(new Set));
+
+                setData({ nodes: decorateGraphNodesWithInitialPositioning(filterDuplicates(nodes)), links: newLinks })
                 setTweets(tweetsList)
                 setLoadingHashTag(false)
             })
@@ -196,7 +207,8 @@ const App = () => {
             .catch(e => console.log(e))
         setLoadingInvIndex(false)
     }
-    // @ts-ignore
+
+
     return (
         <React.Fragment>
             <GlobalStyle />
@@ -210,6 +222,7 @@ const App = () => {
                     <Col style={{ overflow: "hidden", position: "relative" }}>
                         {
                             tableInfo ? (
+
                                 <TweetsWrapper>
                                     {tweets.map(elem => (
                                         <Tweet options={{ theme: 'dark' }} tweetId={elem.id} />
@@ -275,6 +288,14 @@ const App = () => {
                         </TableWrapper>
                     </Col>
                 </Row>
+            </Container>
+            <Container style={{ height: "500px" }}>
+            <Graph
+                                id="graph-id"
+                                data={data}
+                                config={myConfig}
+                            />
+
             </Container>
         </React.Fragment>
     );
