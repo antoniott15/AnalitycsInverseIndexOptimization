@@ -7,6 +7,7 @@ import { myConfig } from "./config"
 import axios, { AxiosResponse } from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { AutoSizer, Column, Table } from 'react-virtualized';
+import 'react-virtualized/styles.css';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -24,7 +25,10 @@ const Title = styled.div`
   margin-top: 50px;
   margin-bottom: 50px;
 `
-
+const ReactVirtualized__Table = styled.div`
+    display: flex;
+    flex-direction: row;
+`
 const TableInfoWrapper = styled.div`
     display: flex;
     justify-content: center;
@@ -200,7 +204,6 @@ const App = () => {
             data: wordList
         })
             .then((res: AxiosResponse<any>) => {
-                console.log(res.data)
                 const tweetsList: TweetElem[] = []
                 res.data.data.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
@@ -269,13 +272,13 @@ const App = () => {
                                 {loadingInvIndex && <CircularProgress color="secondary" />}
                             </CustomButton>
                         </Wrapper>
-                        <AutoSizer disableHeight disableWidth>
+                        <AutoSizer>
                             {({width}) => (
                                 <Table
-                                    width={300}
-                                    height={300}
-                                    headerHeight={100}
-                                    rowHeight={100}
+                                    width={500}
+                                    height={400}
+                                    headerHeight={50}
+                                    rowHeight={50}
                                     rowCount={tokens.length}
                                     rowGetter={({ index }) => tokens[index]}
                                 >
@@ -287,12 +290,13 @@ const App = () => {
                     </Col>
                 </Row>
             </Container>
+                                
             <Container style={{ height: "500px" }}>
-            <Graph
-                                id="graph-id"
-                                data={data}
-                                config={myConfig}
-                            />
+                <Graph
+                                    id="graph-id"
+                                    data={data}
+                                    config={myConfig}
+                                />
 
             </Container>
         </React.Fragment>
