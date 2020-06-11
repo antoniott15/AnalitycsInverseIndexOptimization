@@ -1,11 +1,10 @@
-import React, { useState, useMemo, useCallback, FunctionComponent } from 'react'
+import React, { useState } from 'react'
 import styled, { createGlobalStyle } from 'styled-components'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
 import { Tweet } from 'react-twitter-widgets'
-import { FixedSizeList } from 'react-window'
-import AutoSizer from 'react-virtualized-auto-sizer'
 import axios, { AxiosResponse } from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { AutoSizer, Column, Table } from 'react-virtualized'
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -116,7 +115,9 @@ const App = () => {
     const [hashTagInput, setHashTagInput] = useState('')
     const [numberOfRequests, setnumberOfRequests] = useState()
     const [invertedIndexInput, setInvertedIndexInput] = useState('')
-    const tkList: Token[] = []
+    const tkList: Token[] = [
+        new Token('hello', 5)
+    ]
     const tList: TweetElem[] = []
     const [tokens, setTokens] = useState(tkList)
     const [tweets, setTweets] = useState(tList)
@@ -135,9 +136,6 @@ const App = () => {
         return 0;
     }
 
-    const onSubmit = () => {
-        //
-    }
     const base_url = 'http://localhost:4200/'
 
     const searchHashTag = async () => {
@@ -154,21 +152,21 @@ const App = () => {
                 })
                 tokensList.sort(compare)
                 setTokens(tokensList)
-                const graph: Data = {
-                    nodes: new Set<Node>(),
-                    links: []
-                };
+                // const graph: Data = {
+                //     nodes: new Set<Node>(),
+                //     links: []
+                // };
                 res.data.data.tweets.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
-                    
-                    for(const elements in t.hashtags){
-                        graph.nodes.add(t.hashtags[elements])
-                    }
-                    for(let i = 0; i < t.hashtags.lenght; i++){
-                        for(let j = i + 1; j < t.hashtags.lenght - 1; j++){
-                            
-                        }
-                    }
+
+                    // for(const elements in t.hashtags){
+                    //     graph.nodes.add(t.hashtags[elements])
+                    // }
+                    // for(let i = 0; i < t.hashtags.lenght; i++){
+                    //     for(let j = i + 1; j < t.hashtags.lenght - 1; j++){
+                    //
+                    //     }
+                    // }
                 })
                 setTweets(tweetsList)
                 setLoadingHashTag(false)
@@ -253,26 +251,21 @@ const App = () => {
                                 {loadingInvIndex && <CircularProgress color="secondary" />}
                             </CustomButton>
                         </Wrapper>
-                        <TableWrapper>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Word</th>
-                                        <th>Frequency</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tokens.map((data) => {
-                                        return (
-                                            <tr>
-                                                <td>{data.word}</td>
-                                                <td>{data.freq}</td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </TableWrapper>
+                        <AutoSizer disableHeight disableWidth>
+                            {({width}) => (
+                                <Table
+                                    width={300}
+                                    height={300}
+                                    headerHeight={100}
+                                    rowHeight={100}
+                                    rowCount={tokens.length}
+                                    rowGetter={({ index }) => tokens[index]}
+                                >
+                                    <Column label="word" dataKey="word" width={150} />
+                                    <Column label="freq" dataKey="freq" width={150} />
+                                </Table>
+                            )}
+                        </AutoSizer>
                     </Col>
                 </Row>
             </Container>
