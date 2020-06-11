@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
-import styled, { createGlobalStyle } from 'styled-components'
-import { Container, Row, Col, Form, Button } from 'react-bootstrap'
-import { Tweet } from 'react-twitter-widgets'
-import { Graph, GraphNode, GraphLink } from "react-d3-graph";
-import { myConfig } from "./config"
-import axios, { AxiosResponse } from 'axios'
+import React, {useState} from 'react'
+import styled, {createGlobalStyle} from 'styled-components'
+import {Container, Row, Col, Form, Button} from 'react-bootstrap'
+import {Tweet} from 'react-twitter-widgets'
+import {Graph, GraphNode, GraphLink} from "react-d3-graph";
+import {myConfig} from "./config"
+import axios, {AxiosResponse} from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { AutoSizer, Column, Table } from 'react-virtualized';
+import {CellMeasurer, List, AutoSizer, Column, Table, ListRowProps, CellMeasurerCache} from 'react-virtualized';
 import 'react-virtualized/styles.css';
 
 const GlobalStyle = createGlobalStyle`
@@ -118,8 +118,8 @@ const App = () => {
     const [tableInfo, setTableInfo] = useState(false)
     const [loadingInvIndex, setLoadingInvIndex] = useState(false)
     const Defaultdata = {
-        nodes: [{ id: "No" }, { id: "Data" }],
-        links: [{ source: "No", target: "Data" }],
+        nodes: [{id: "No"}, {id: "Data"}],
+        links: [{source: "No", target: "Data"}],
     };
 
     const [data, setData] = useState(Defaultdata)
@@ -136,7 +136,7 @@ const App = () => {
 
     const base_url = 'http://localhost:4200/'
 
-    const filterDuplicates = (w: any) => w.filter((v: any,i: any) => w.indexOf(v) === i)
+    const filterDuplicates = (w: any) => w.filter((v: any, i: any) => w.indexOf(v) === i)
 
     const decorateGraphNodesWithInitialPositioning = (nodes: any) => {
         return nodes.map((n: any) =>
@@ -169,14 +169,14 @@ const App = () => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
 
                     for (const elements in t.hashtags) {
-                        nodes.push({ id: t.hashtags[elements] })
+                        nodes.push({id: t.hashtags[elements]})
                     }
 
                     if (t.hashtags.length >= 2) {
                         for (let i = 0; i < t.hashtags.length; i++) {
                             for (let j = i + 1; j < t.hashtags.length; j++) {
-                                if(t.hashtags[i] !==  t.hashtags[j]){
-                                    links.push({ source: t.hashtags[i], target: t.hashtags[j] })
+                                if (t.hashtags[i] !== t.hashtags[j]) {
+                                    links.push({source: t.hashtags[i], target: t.hashtags[j]})
                                 }
                             }
                         }
@@ -187,7 +187,7 @@ const App = () => {
                 //@ts-ignore
                 const newLinks = links.filter((set => f => !set.has(f.source) && set.add(f.target))(new Set));
 
-                setData({ nodes: decorateGraphNodesWithInitialPositioning(filterDuplicates(nodes)), links: newLinks })
+                setData({nodes: decorateGraphNodesWithInitialPositioning(filterDuplicates(nodes)), links: newLinks})
                 setTweets(tweetsList)
                 setLoadingHashTag(false)
             })
@@ -214,10 +214,27 @@ const App = () => {
         setLoadingInvIndex(false)
     }
 
+    const cache = new CellMeasurerCache({
+        defaultHeight: 50,
+        fixedWidth: true
+    });
+
+    const rowRenderer = (props: ListRowProps) => (
+
+        <CellMeasurer cache={cache} columnIndex={0} key={props.key} parent={props.parent} rowIndex={props.index}>
+            {({ measure, registerChild }) => (
+                // @ts-ignore
+                <div ref={registerChild} style={props.style}>
+                    <Tweet onLoad={measure} tweetId={tweets[props.index].id}/>
+                </div>
+            )}
+
+        </CellMeasurer>
+    )
 
     return (
         <React.Fragment>
-            <GlobalStyle />
+            <GlobalStyle/>
             <Container>
                 <Row className="justify-content-md-center">
                     <Title>
@@ -225,7 +242,16 @@ const App = () => {
                     </Title>
                 </Row>
                 <Row>
-                    <Col style={{ overflow: "hidden", position: "relative" }}>
+                    <Col style={{overflow: "hidden", position: "relative"}}>
+                                <List
+                                    deferredMeasurementCache={cache}
+                                    rowCount={tweets.length}
+                                    rowHeight={cache.rowHeight}
+                                    width={500}
+                                    height={800}
+                                    rowRenderer={rowRenderer}/>
+                            )}
+                        {/*
                         {
                             tableInfo ? (
 
@@ -247,29 +273,30 @@ const App = () => {
                                         )
                                 )
                         }
+                        */}
                     </Col>
                     <Col>
                         <Wrapper>
                             <Form.Group>
                                 <Form.Label>Búsqueda por Hashtag</Form.Label>
-                                <CustomInput onChange={((e: any) => setHashTagInput(e.target.value))} type="text" />
+                                <CustomInput onChange={((e: any) => setHashTagInput(e.target.value))} type="text"/>
                                 <Form.Label>Cantidad</Form.Label>
-                                <CustomInput onChange={((e: any) => setnumberOfRequests(e.target.value))} type="text" />
+                                <CustomInput onChange={((e: any) => setnumberOfRequests(e.target.value))} type="text"/>
                             </Form.Group>
                             <CustomButton type="submit" onClick={searchHashTag}>
                                 {!loadingHashTag && <span>Buscar</span>}
-                                {loadingHashTag && <CircularProgress color="secondary" />}
+                                {loadingHashTag && <CircularProgress color="secondary"/>}
                             </CustomButton>
                         </Wrapper>
 
                         <Wrapper>
                             <Form.Group>
                                 <Form.Label>Búsqueda por Índice Invertido</Form.Label>
-                                <CustomInput onChange={(e: any) => setInvertedIndexInput(e.target.value)} type="text" />
+                                <CustomInput onChange={(e: any) => setInvertedIndexInput(e.target.value)} type="text"/>
                             </Form.Group>
                             <CustomButton type="submit" onClick={searchInvertedIndex}>
                                 {!loadingInvIndex && <span>Buscar</span>}
-                                {loadingInvIndex && <CircularProgress color="secondary" />}
+                                {loadingInvIndex && <CircularProgress color="secondary"/>}
                             </CustomButton>
                         </Wrapper>
                         <AutoSizer>
@@ -280,23 +307,23 @@ const App = () => {
                                     headerHeight={50}
                                     rowHeight={50}
                                     rowCount={tokens.length}
-                                    rowGetter={({ index }) => tokens[index]}
+                                    rowGetter={({index}) => tokens[index]}
                                 >
-                                    <Column label="word" dataKey="word" width={150} />
-                                    <Column label="freq" dataKey="freq" width={150} />
+                                    <Column label="word" dataKey="word" width={150}/>
+                                    <Column label="freq" dataKey="freq" width={150}/>
                                 </Table>
                             )}
                         </AutoSizer>
                     </Col>
                 </Row>
             </Container>
-                                
-            <Container style={{ height: "500px" }}>
+
+            <Container style={{height: "500px"}}>
                 <Graph
-                                    id="graph-id"
-                                    data={data}
-                                    config={myConfig}
-                                />
+                    id="graph-id"
+                    data={data}
+                    config={myConfig}
+                />
 
             </Container>
         </React.Fragment>
