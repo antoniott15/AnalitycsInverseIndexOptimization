@@ -1,14 +1,15 @@
-import React, { useState } from 'react'
-import styled, { createGlobalStyle } from 'styled-components'
-import { Container, Row, Col, Form } from 'react-bootstrap'
-import { Tweet } from 'react-twitter-widgets'
-import { Graph, GraphNode, GraphLink } from "react-d3-graph";
+import React, {useState, useEffect} from 'react'
+import styled, {createGlobalStyle} from 'styled-components'
+import {Container, Row, Col, Form, Button, Pagination} from 'react-bootstrap'
+import {Tweet} from 'react-twitter-widgets'
+import {Graph, GraphNode, GraphLink} from "react-d3-graph";
+import {myConfig} from "./config"
+import axios, {AxiosResponse} from 'axios'
 
-import { myConfig } from "./config"
-import axios, { AxiosResponse } from 'axios'
 import CircularProgress from '@material-ui/core/CircularProgress';
 import {CellMeasurer, List, AutoSizer, Column, Table, ListRowProps, CellMeasurerCache} from 'react-virtualized';
 import 'react-virtualized/styles.css';
+import {act} from "react-dom/test-utils";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -118,6 +119,7 @@ const App = () => {
     const [loadingHashTag, setLoadingHashTag] = useState(false)
     const [tableInfo, setTableInfo] = useState(false)
     const [loadingInvIndex, setLoadingInvIndex] = useState(false)
+    const [active, setActive] = useState(1)
     const Defaultdata = {
         nodes: [{id: "No"}, {id: "Data"}],
         links: [{source: "No", target: "Data"}],
@@ -162,38 +164,37 @@ const App = () => {
                 })
                 tokensList.sort(compare)
                 setTokens(tokensList)
-                const nodes: Array<GraphNode> = new Array<GraphNode>();
-                const links: Array<GraphLink> = new Array<GraphLink>();
+                // const nodes: Array<GraphNode> = new Array<GraphNode>();
+                // const links: Array<GraphLink> = new Array<GraphLink>();
 
 
                 res.data.data.tweets.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
 
-                    for (const elements in t.hashtags) {
-                        nodes.push({id: t.hashtags[elements]})
-                    }
-
-                    if (t.hashtags.length >= 2) {
-                        for (let i = 0; i < t.hashtags.length; i++) {
-                            for (let j = i + 1; j < t.hashtags.length; j++) {
-                                if (t.hashtags[i] !== t.hashtags[j]) {
-                                    links.push({source: t.hashtags[i], target: t.hashtags[j]})
-                                }
-                            }
-                        }
-                    }
+                    // for (const elements in t.hashtags) {
+                    //     nodes.push({id: t.hashtags[elements]})
+                    // }
+                    //
+                    // if (t.hashtags.length >= 2) {
+                    //     for (let i = 0; i < t.hashtags.length; i++) {
+                    //         for (let j = i + 1; j < t.hashtags.length; j++) {
+                    //             if (t.hashtags[i] !== t.hashtags[j]) {
+                    //                 links.push({source: t.hashtags[i], target: t.hashtags[j]})
+                    //             }
+                    //         }
+                    //     }
+                    // }
 
                 })
 
-                //@ts-ignore
-                const newLinks = links.filter((set => f => !set.has(f.source) && set.add(f.target))(new Set));
-
-                setData({nodes: decorateGraphNodesWithInitialPositioning(filterDuplicates(nodes)), links: newLinks})
+                // //@ts-ignore
+                // const newLinks = links.filter((set => f => !set.has(f.source) && set.add(f.target))(new Set));
+                //
+                // setData({nodes: decorateGraphNodesWithInitialPositioning(filterDuplicates(nodes)), links: newLinks})
                 setTweets(tweetsList)
                 setLoadingHashTag(false)
             })
             .catch(e => console.log(e))
-
     }
 
     const searchInvertedIndex = async () => {
@@ -226,12 +227,45 @@ const App = () => {
             {({ measure, registerChild }) => (
                 // @ts-ignore
                 <div ref={registerChild} style={props.style}>
-                    <Tweet onLoad={measure} tweetId={tweets[props.index].id}/>
+                    <Tweet options={{theme: 'dark'}} onLoad={measure} tweetId={tweets[props.index].id}/>
                 </div>
             )}
 
         </CellMeasurer>
     )
+
+    const handlePageChange = (pageNumber: number) => {
+        console.log(pageNumber)
+        setActive(pageNumber)
+    }
+
+    useEffect(() => {
+        console.log('fetching data for' + active)
+        setLoadingHashTag(true)
+        const tweetsList: TweetElem[] = []
+        const url = base_url + 'api/get-tweets-by-page/' + hashTagInput + '/' + (active - 1)
+        const fetchData = async () => {
+            return await axios.get(url)
+        }
+        fetchData()
+            .then((res) => {
+                res.data.data.tweets.tweet.forEach((t: any) => {
+                    tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
+                })
+                setTweets(tweetsList)
+            })
+            .catch((e) => console.log(e))
+        setLoadingHashTag(false)
+    }, [active])
+
+    let items = [];
+    for (let number = 1; number <= 10; number++) {
+        items.push(
+            <Pagination.Item onClick={(e: any) => setActive(number)} key={number} active={number === active}>
+                {number}
+            </Pagination.Item>,
+        );
+    }
 
     return (
         <React.Fragment>
@@ -243,38 +277,39 @@ const App = () => {
                     </Title>
                 </Row>
                 <Row>
-                    <Col style={{overflow: "hidden", position: "relative"}}>
-                                <List
-                                    deferredMeasurementCache={cache}
-                                    rowCount={tweets.length}
-                                    rowHeight={cache.rowHeight}
-                                    width={500}
-                                    height={800}
-                                    rowRenderer={rowRenderer}/>
-                            )}
-                        {/*
+                    <Col>
                         {
                             tableInfo ? (
+                                    <div>
+                                        <List
+                                            deferredMeasurementCache={cache}
+                                            rowCount={tweets.length}
+                                            rowHeight={cache.rowHeight}
+                                            width={500}
+                                            height={500}
+                                            rowRenderer={rowRenderer}
+                                        />
+                                        <div style={{alignItems: "center"}}>
+                                            <Pagination>
+                                                {items}
+                                            </Pagination>
 
-                                <TweetsWrapper>
-                                    {tweets.map(elem => (
-                                        <Tweet options={{ theme: 'dark' }} tweetId={elem.id} />
-                                    ))}
-                                </TweetsWrapper>
-                            ) : (
+                                        </div>
+                                    </div>
+                                ) :
+                                (
                                     loadingHashTag ? (
                                         <TableInfoWrapper style={{ marginTop: "10rem" }}>
                                             <Form.Label>... Loading</Form.Label>
                                         </TableInfoWrapper>
 
                                     ) : (
-                                            <TableInfoWrapper style={{ marginTop: "10rem" }}>
-                                                <Form.Label>No data</Form.Label>
-                                            </TableInfoWrapper>
-                                        )
+                                        <TableInfoWrapper style={{ marginTop: "10rem" }}>
+                                            <Form.Label>No data</Form.Label>
+                                        </TableInfoWrapper>
+                                    )
                                 )
                         }
-                        */}
                     </Col>
                     <Col>
                         <Wrapper>
@@ -310,7 +345,7 @@ const App = () => {
                                     rowCount={tokens.length}
                                     rowGetter={({index}) => tokens[index]}
                                 >
-                                    <Column label="word" dataKey="word" width={150}/>
+                                    <Column label="word" dataKey="word" width={350}/>
                                     <Column label="freq" dataKey="freq" width={150}/>
                                 </Table>
                             )}
@@ -319,14 +354,14 @@ const App = () => {
                 </Row>
             </Container>
 
-            <Container style={{height: "500px"}}>
-                <Graph
-                    id="graph-id"
-                    data={data}
-                    config={myConfig}
-                />
+            {/*<Container style={{height: "500px"}}>*/}
+            {/*    <Graph*/}
+            {/*        id="graph-id"*/}
+            {/*        data={data}*/}
+            {/*        config={myConfig}*/}
+            {/*    />*/}
 
-            </Container>
+            {/*</Container>*/}
         </React.Fragment>
     );
 
