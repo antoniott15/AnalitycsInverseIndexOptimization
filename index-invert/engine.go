@@ -194,7 +194,7 @@ func getStopWords(file string) (map[string]bool, error) {
 	words := make(map[string]bool)
 	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
-		words[scanner.Text()] = true
+		words[strings.ToUpper(scanner.Text())] = true
 	}
 
 	return words, nil
@@ -210,7 +210,7 @@ func (e *Engine) getTokens(list []*proto.DataTweet) (map[string]int, error) {
 	for _, values := range list {
 		for _, words := range strings.Split(values.Tweet, " ") {
 			words = e.CleanWord(words)
-			if _, ok := stopWords[words]; !ok {
+			if _, ok := stopWords[strings.ToUpper(words)]; !ok {
 				if words != "" {
 					if _, ok := tokens[words]; ok {
 						tokens[words] = tokens[words] + 1
@@ -241,34 +241,60 @@ func (e *Engine) getIndexInvert(list []*proto.DataTweet) (map[string]*WordList, 
 		var sep string
 		if strings.Contains(values.Tweet, "\n") {
 			sep = "\n"
-		} else if strings.Contains(values.Tweet[1:], "#") {
-			sep = "#"
 		} else {
 			sep = " "
 		}
 		for _, words := range strings.Split(values.Tweet, sep) {
 			words = e.CleanWord(words)
-			if _, ok := stopWords[words]; !ok {
-				if words != "" {
-					if _, ok := tokens[words]; ok {
-						tokensNot[words] = tokensNot[words] + 1
-						c := tokens[words]
-						c.IdsAppearing = append(c.IdsAppearing, values.Id)
-						tokens[words] = &WordList{
-							Name:         words,
-							Count:        c.Count + 1,
-							IdsAppearing: c.IdsAppearing,
+			if !strings.Contains(words, " ") {
+				if _, ok := stopWords[strings.ToUpper(words)]; !ok {
+					if words != "" {
+						if _, ok := tokens[words]; ok {
+							tokensNot[words] = tokensNot[words] + 1
+							c := tokens[words]
+							c.IdsAppearing = append(c.IdsAppearing, values.Id)
+							tokens[words] = &WordList{
+								Name:         words,
+								Count:        c.Count + 1,
+								IdsAppearing: c.IdsAppearing,
+							}
+						} else {
+							tokensNot[words] = 1
+							tokens[words] = &WordList{
+								Name:         words,
+								Count:        1,
+								IdsAppearing: []string{values.Id},
+							}
 						}
-					} else {
-						tokensNot[words] = 1
-						tokens[words] = &WordList{
-							Name:         words,
-							Count:        1,
-							IdsAppearing: []string{values.Id},
+					}
+				}
+			}else {
+				wordsList := strings.Split(words, " ")
+				for _, wordsValues := range wordsList  {
+					if _, ok := stopWords[strings.ToUpper(wordsValues)]; !ok {
+						if wordsValues != "" {
+							if _, ok := tokens[wordsValues]; ok {
+								tokensNot[wordsValues] = tokensNot[wordsValues] + 1
+								c := tokens[wordsValues]
+								c.IdsAppearing = append(c.IdsAppearing, values.Id)
+								tokens[wordsValues] = &WordList{
+									Name:         wordsValues,
+									Count:        c.Count + 1,
+									IdsAppearing: c.IdsAppearing,
+								}
+							} else {
+								tokensNot[wordsValues] = 1
+								tokens[wordsValues] = &WordList{
+									Name:         wordsValues,
+									Count:        1,
+									IdsAppearing: []string{values.Id},
+								}
+							}
 						}
 					}
 				}
 			}
+
 		}
 	}
 	return tokens, tokensNot, nil
@@ -366,11 +392,10 @@ func (e *Engine) getIndexInvertByName(file string) ([]*WordList, error) {
 }
 
 func (e *Engine) CleanWord(word string) string {
-	chars := []string{"!", "@", ".", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "?", "¿", "*", "}", "\n", " ", "\t", "¡", "^", "]", "[", ":", ";", "-", "_", ",", "\"", "'", "(", ")"}
+	chars := []string{"!", "@", ".", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "?", "¿", "*", "}", "\n", "\t", "¡", "^", "]", "[", ":", ";", "-", "_", ",", "\"", "'", "(", ")"}
 	var newWord string
 	for i, elements := range chars {
 		if i == 0 {
-
 			newWord = strings.ReplaceAll(word, elements, "")
 		} else {
 			newWord = strings.ReplaceAll(newWord, elements, "")
