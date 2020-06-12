@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -114,7 +115,14 @@ func fileIndexInvert(value string) string {
 func (e *Engine) cleanTokens(tokens map[string]int) map[string]int {
 	newTokens := make(map[string]int)
 	for key, val := range tokens {
-		newTokens[e.CleanWord(key)] = val
+		if strings.Contains(e.CleanWord(key), " ") {
+			newkey:= strings.Split(e.CleanWord(key), " ")
+			for _, elements := range newkey {
+				newTokens[elements] = val
+			}
+		}else {
+			newTokens[e.CleanWord(key)] = val
+		}
 	}
 	return newTokens
 }
