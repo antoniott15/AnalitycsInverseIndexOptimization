@@ -249,6 +249,7 @@ const App = () => {
         }
         fetchData()
             .then((res) => {
+                console.log(res.data)
                 res.data.data.tweets.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
                 })
