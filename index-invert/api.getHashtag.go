@@ -9,7 +9,6 @@ import (
 func (api *API) registerHashtag(r *gin.RouterGroup) {
 	r.GET("/get-hashtag/:hashtag/:limit", func(c *gin.Context) {
 		hashtag := c.Param("hashtag")
-		hashtag = "#" + hashtag
 
 		limit := c.Param("limit")
 
@@ -27,7 +26,7 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 		}
 
 		if !has {
-			tweets, err := api.engine.GetTweets(hashtag, limit)
+			tweets, err := api.engine.GetTweets("#"+hashtag, limit)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -38,13 +37,14 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			}
 
-			if err := api.engine.saveIndexInvert(fileIndexInvert(hashtag), words); err != nil {
+			if err :=  api.engine.saveIndexInvertInitial(fileIndexInvert(hashtag), words); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
 			}
 
 			tokens = api.engine.cleanTokens(tokens)
 
-			if err := api.engine.save(file(hashtag), tweets.Tweet); err != nil {
+			if err:= api.engine.saveInitial(file(hashtag), tweets.Tweet); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
@@ -55,6 +55,15 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 					"tokens": tokens,
 				},
 			})
+
+			if err :=  api.engine.saveIndexInvert(fileIndexInvert(hashtag), words); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			if err := api.engine.save(file(hashtag), tweets.Tweet); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 			return
 		}
 
@@ -68,6 +77,26 @@ func (api *API) registerHashtag(r *gin.RouterGroup) {
 			"data": gin.H{
 				"tweets": tweets,
 				"tokens": token,
+			},
+		})
+		return
+	})
+
+
+	r.GET("get-tweets-by-page/:hashtag/:page", func(c *gin.Context) {
+		hashtag := c.Param("hashtag")
+		page := c.Param("page")
+
+		tweets, err := api.engine.GetListPaginated(file(hashtag),page)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": gin.H{
+				"tweets": tweets,
 			},
 		})
 		return

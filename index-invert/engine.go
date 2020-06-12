@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	proto "indexInverse/protos"
 	"os"
 	"strings"
@@ -13,32 +14,53 @@ type Engine struct {
 }
 
 func (e *Engine) save(name string, list []*proto.DataTweet) error {
-	file, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
-	err = os.Chmod(name, 0777)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	os.Mkdir(name, 0777)
+	totalLen := len(list) / 10
 
-	c := bufio.NewWriter(file)
+	for i := 1; i < 10; i++ {
+		file, err := os.OpenFile(getFilePaginated(name, i), os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
+		err = os.Chmod(getFilePaginated(name, i), 0777)
 
-	elem, err := json.MarshalIndent(list, "", "\t")
-	if err != nil {
-		return err
-	}
-	_, err = c.Write(elem)
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		c := bufio.NewWriter(file)
+
+		var wordlist []*proto.DataTweet
+
+		for j := totalLen * i; j < totalLen*(i+1); j++ {
+			if j < totalLen*(i+1) {
+				wordlist = append(wordlist, list[j])
+			}
+			if j == totalLen*(i+1) {
+				break
+			}
+		}
+
+		elem, err := json.MarshalIndent(wordlist, "", "\t")
+		if err != nil {
+			return err
+		}
+		_, err = c.Write(elem)
+		if err != nil {
+			return err
+		}
+
+		c.Flush()
 	}
 
-	c.Flush()
 	return nil
 
 }
 
-func (e *Engine) saveIndexInvert(fileName string, list map[string]*WordList) error {
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
-	err = os.Chmod(fileName, 0777)
+func (e *Engine) saveInitial(name string, list []*proto.DataTweet) error {
+	os.Mkdir(name, 0777)
+	totalLen := len(list) / 10
+
+	i := 0
+	file, err := os.OpenFile(getFilePaginated(name, i), os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
+	err = os.Chmod(getFilePaginated(name, i), 0777)
 
 	if err != nil {
 		return err
@@ -46,9 +68,15 @@ func (e *Engine) saveIndexInvert(fileName string, list map[string]*WordList) err
 	defer file.Close()
 	c := bufio.NewWriter(file)
 
-	var wordlist []*WordList
-	for _, elements := range list {
-		wordlist = append(wordlist, elements)
+	var wordlist []*proto.DataTweet
+
+	for j := totalLen * i; j < totalLen*(i+1); j++ {
+		if j < totalLen*(i+1) {
+			wordlist = append(wordlist, list[j])
+		}
+		if j == totalLen*(i+1) {
+			break
+		}
 	}
 
 	elem, err := json.MarshalIndent(wordlist, "", "\t")
@@ -61,8 +89,97 @@ func (e *Engine) saveIndexInvert(fileName string, list map[string]*WordList) err
 	}
 
 	c.Flush()
+
 	return nil
 
+}
+
+func (e *Engine) saveIndexInvertInitial(fileName string, list map[string]*WordList) error {
+	os.Mkdir(fileName, 0777)
+	totalLen := len(list) / 10
+	i := 0
+
+	file, err := os.OpenFile(getFilePaginated(fileName, i), os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
+	err = os.Chmod(getFilePaginated(fileName, i), 0777)
+
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	c := bufio.NewWriter(file)
+
+	var wordlist []*WordList
+
+	j := totalLen * i
+	for _, elements := range list {
+		if j < totalLen*(i+1) {
+			wordlist = append(wordlist, elements)
+		}
+		if j == totalLen*(i+1) {
+			break
+		}
+		j++
+	}
+	elem, err := json.MarshalIndent(wordlist, "", "\t")
+	if err != nil {
+		return err
+	}
+	_, err = c.Write(elem)
+	if err != nil {
+		return err
+	}
+
+	c.Flush()
+
+	return nil
+}
+
+func (e *Engine) saveIndexInvert(fileName string, list map[string]*WordList) error {
+	totalLen := len(list) / 10
+	for i := 1; i < 10; i++ {
+
+		file, err := os.OpenFile(getFilePaginated(fileName, i), os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModeAppend)
+		err = os.Chmod(getFilePaginated(fileName, i), 0777)
+
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		c := bufio.NewWriter(file)
+
+		var wordlist []*WordList
+
+		j := totalLen * i
+		for _, elements := range list {
+			if j < totalLen*(i+1) {
+				wordlist = append(wordlist, elements)
+			}
+			if j == totalLen*(i+1) {
+				break
+			}
+			j++
+		}
+		elem, err := json.MarshalIndent(wordlist, "", "\t")
+		if err != nil {
+			return err
+		}
+		_, err = c.Write(elem)
+		if err != nil {
+			return err
+		}
+
+		c.Flush()
+	}
+
+	return nil
+}
+
+func getFilePaginated(fileName string, i int) string {
+	return fileName + "/" + fmt.Sprint(i) + ".json"
+}
+
+func getFilePaginatedString(fileName string, i string) string {
+	return fileName + "/" + i + ".json"
 }
 
 func getStopWords(file string) (map[string]bool, error) {
@@ -124,6 +241,8 @@ func (e *Engine) getIndexInvert(list []*proto.DataTweet) (map[string]*WordList, 
 		var sep string
 		if strings.Contains(values.Tweet, "\n") {
 			sep = "\n"
+		} else if strings.Contains(values.Tweet[1:], "#") {
+			sep = "#"
 		} else {
 			sep = " "
 		}
@@ -156,43 +275,62 @@ func (e *Engine) getIndexInvert(list []*proto.DataTweet) (map[string]*WordList, 
 }
 
 func (e *Engine) getTokenAndTweetsByFile(file string) (*proto.DataResponse, map[string]int, error) {
-	r, err := os.Open(file)
+	var tweets [][]*proto.DataTweet
+
+	for i := 0; i < 10; i++ {
+		r, _ := os.Open(getFilePaginated(file, i))
+
+		decoder := json.NewDecoder(r)
+		var tweet []*proto.DataTweet
+		decoder.Decode(&tweet)
+
+		tweets = append(tweets, tweet)
+
+	}
+
+	var res []*proto.DataTweet
+	for _, elements := range tweets {
+		for _, values := range elements {
+			res = append(res, values)
+		}
+	}
+	tokens, err := e.getTokens(res)
+
 	if err != nil {
 		return nil, nil, err
 	}
-
-	decoder := json.NewDecoder(r)
-
-	var tweets []*proto.DataTweet
-	err = decoder.Decode(&tweets)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	tokens, err := e.getTokens(tweets)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	return &proto.DataResponse{
-		Tweet:  tweets,
+		Tweet:  res,
 		Lenght: int32(len(tweets)),
 	}, tokens, nil
 
 }
 
 func (e *Engine) getTweetsByFile(file string) (*proto.DataResponse, error) {
-	r, err := os.Open(file)
-	if err != nil {
-		return nil, err
+	var allTweets [][]*proto.DataTweet
+	for i:=0; i < 10; i++ {
+		r, err := os.Open(getFilePaginated(file,i))
+		if err != nil {
+			return nil, err
+		}
+
+		decoder := json.NewDecoder(r)
+
+		var pTweets []*proto.DataTweet
+		err = decoder.Decode(&pTweets)
+		if err != nil {
+			return nil, err
+		}
+
+		allTweets = append(allTweets, pTweets)
 	}
 
-	decoder := json.NewDecoder(r)
-
 	var tweets []*proto.DataTweet
-	err = decoder.Decode(&tweets)
-	if err != nil {
-		return nil, err
+
+	for _, elements := range allTweets {
+		for _, values := range elements {
+			tweets = append(tweets, values)
+		}
 	}
 
 	return &proto.DataResponse{
@@ -203,21 +341,32 @@ func (e *Engine) getTweetsByFile(file string) (*proto.DataResponse, error) {
 }
 
 func (e *Engine) getIndexInvertByName(file string) ([]*WordList, error) {
-	r, err := os.Open(file)
-	if err != nil {
-		return nil, err
+	var words [][]*WordList
+	for i:=0;i < 10; i++ {
+		r, err := os.Open(getFilePaginated(file,i))
+		if err != nil {
+			return nil, err
+		}
+
+		decoder := json.NewDecoder(r)
+		var wordListIndex []*WordList
+		if err := decoder.Decode(&wordListIndex); err != nil {
+			return nil, err
+		}
+		words = append(words, wordListIndex)
 	}
 
-	decoder := json.NewDecoder(r)
-	var wordListIndex []*WordList
-	if err := decoder.Decode(&wordListIndex); err != nil {
-		return nil, err
+	var wordIndex []*WordList
+	for _,elements := range words {
+		for _, values := range elements {
+			wordIndex = append(wordIndex, values)
+		}
 	}
-	return wordListIndex, nil
+	return wordIndex, nil
 }
 
 func (e *Engine) CleanWord(word string) string {
-	chars := []string{"!", "@", ".", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "?", "¿", "*", "}", "\n", " ", "\t", "¡", "^", "]", "[", ":", ";", "-", "_", ",", "\"", "'"}
+	chars := []string{"!", "@", ".", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "?", "¿", "*", "}", "\n", " ", "\t", "¡", "^", "]", "[", ":", ";", "-", "_", ",", "\"", "'", "(", ")"}
 	var newWord string
 	for i, elements := range chars {
 		if i == 0 {
@@ -228,4 +377,24 @@ func (e *Engine) CleanWord(word string) string {
 		}
 	}
 	return newWord
+}
+
+
+func (e* Engine) GetListPaginated(file, page string) (*proto.DataResponse,error) {
+	r, err := os.Open(getFilePaginatedString(file,page))
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(r)
+	var tweets []*proto.DataTweet
+
+	if err := decoder.Decode(&tweets); err != nil {
+		return nil, err
+	}
+	total := len(tweets)
+	return &proto.DataResponse{
+		Tweet:                tweets,
+		Lenght:               int32(total),
+	}, nil
 }

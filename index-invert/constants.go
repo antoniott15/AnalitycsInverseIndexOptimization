@@ -6,5 +6,5 @@ const (
 	PORT      = ":4200"
 	ROOT      = "hashtags"
 	STOPWORDS = "stopwords"
-	INVERT    = "indexinvert"
+	INVERT    = "indexInvert"
 )
