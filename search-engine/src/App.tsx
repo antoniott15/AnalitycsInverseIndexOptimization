@@ -164,33 +164,33 @@ const App = () => {
                 })
                 tokensList.sort(compare)
                 setTokens(tokensList)
-                // const nodes: Array<GraphNode> = new Array<GraphNode>();
-                // const links: Array<GraphLink> = new Array<GraphLink>();
+                const nodes: Array<GraphNode> = new Array<GraphNode>();
+                const links: Array<GraphLink> = new Array<GraphLink>();
 
 
                 res.data.data.tweets.tweet.forEach((t: any) => {
                     tweetsList.push(new TweetElem(t.id, t.name, t.tweet, t.username))
 
-                    // for (const elements in t.hashtags) {
-                    //     nodes.push({id: t.hashtags[elements]})
-                    // }
-                    //
-                    // if (t.hashtags.length >= 2) {
-                    //     for (let i = 0; i < t.hashtags.length; i++) {
-                    //         for (let j = i + 1; j < t.hashtags.length; j++) {
-                    //             if (t.hashtags[i] !== t.hashtags[j]) {
-                    //                 links.push({source: t.hashtags[i], target: t.hashtags[j]})
-                    //             }
-                    //         }
-                    //     }
-                    // }
+                    for (const elements in t.hashtags) {
+                        nodes.push({id: t.hashtags[elements]})
+                    }
+
+                    if (t.hashtags.length >= 2) {
+                        for (let i = 0; i < t.hashtags.length; i++) {
+                            for (let j = i + 1; j < t.hashtags.length; j++) {
+                                if (t.hashtags[i] !== t.hashtags[j]) {
+                                    links.push({source: t.hashtags[i], target: t.hashtags[j]})
+                                }
+                            }
+                        }
+                    }
 
                 })
 
-                // //@ts-ignore
-                // const newLinks = links.filter((set => f => !set.has(f.source) && set.add(f.target))(new Set));
-                //
-                // setData({nodes: decorateGraphNodesWithInitialPositioning(filterDuplicates(nodes)), links: newLinks})
+                //@ts-ignore
+                const newLinks = links.filter((set => f => !set.has(f.source) && set.add(f.target))(new Set));
+
+                setData({nodes: decorateGraphNodesWithInitialPositioning(filterDuplicates(nodes)), links: newLinks})
                 setTweets(tweetsList)
                 setLoadingHashTag(false)
             })
@@ -336,33 +336,36 @@ const App = () => {
                                 {loadingInvIndex && <CircularProgress color="secondary"/>}
                             </CustomButton>
                         </Wrapper>
-                        <AutoSizer>
-                            {({width}) => (
-                                <Table
-                                    width={500}
-                                    height={400}
-                                    headerHeight={50}
-                                    rowHeight={50}
-                                    rowCount={tokens.length}
-                                    rowGetter={({index}) => tokens[index]}
-                                >
-                                    <Column label="word" dataKey="word" width={350}/>
-                                    <Column label="freq" dataKey="freq" width={150}/>
-                                </Table>
-                            )}
-                        </AutoSizer>
+                        <Wrapper>
+                            <AutoSizer>
+                                {({width}) => (
+                                    <Table
+                                        width={500}
+                                        height={400}
+                                        headerHeight={50}
+                                        rowHeight={50}
+                                        rowCount={tokens.length}
+                                        rowGetter={({index}) => tokens[index]}
+                                    >
+                                        <Column label="word" dataKey="word" width={350}/>
+                                        <Column label="freq" dataKey="freq" width={150}/>
+                                    </Table>
+                                )}
+                            </AutoSizer>
+                        </Wrapper>
                     </Col>
                 </Row>
+                <Row style={{marginTop: "300px"}}>
+                    <Container style={{height: "500px"}}>
+                        <Graph
+                            id="graph-id"
+                            data={data}
+                            config={myConfig}
+                        />
+
+                    </Container>
+                </Row>
             </Container>
-
-            {/*<Container style={{height: "500px"}}>*/}
-            {/*    <Graph*/}
-            {/*        id="graph-id"*/}
-            {/*        data={data}*/}
-            {/*        config={myConfig}*/}
-            {/*    />*/}
-
-            {/*</Container>*/}
         </React.Fragment>
     );
 
