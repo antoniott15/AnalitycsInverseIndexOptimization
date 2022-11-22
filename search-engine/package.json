@@ -29,7 +29,7 @@
     "react-d3-graph": "^2.4.1",
     "react-dom": "^16.13.1",
     "react-infinite-scroll-component": "^5.0.5",
-    "react-scripts": "3.4.1",
+    "react-scripts": "5.0.1",
     "react-table": "^7.1.0",
     "react-twitter-widgets": "^1.9.5",
     "react-virtualized": "^9.21.2",
